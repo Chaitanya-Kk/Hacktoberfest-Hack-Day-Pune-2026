@@ -3,32 +3,2524 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#030712" />
   <title>AIDN Pune — Hacktoberfest 2026 Opening</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- React & Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #030712;
-      font-family: 'Chakra Petch', sans-serif;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@600;700;800;900&display=swap');
+    html, body, #root { width:100%; height:100%; margin:0; padding:0; overflow:hidden; background:#030712; }
+    body { color:white; font-family:'Chakra Petch',sans-serif; }
+    * { box-sizing:border-box; }
   </style>
 </head>
 <body class="bg-[#030712] text-white">
   <div id="root"></div>
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect, useRef, useCallback } = React;
 
-  <!-- Place the complete React code generated in App.jsx here inside this script block -->
-  <script type="text/babel">
-    // Paste App.jsx component code here, then mount:
+const IconFallback = ({ className = "w-4 h-4", ...props }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+       strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" {...props}>
+    <circle cx="12" cy="12" r="8.5" opacity=".65"/>
+    <path d="M8 12h8M12 8v8" />
+  </svg>
+);
+const Calendar = IconFallback;
+const Clock = IconFallback;
+const MapPin = IconFallback;
+const Settings = IconFallback;
+const Play = IconFallback;
+const Pause = IconFallback;
+const RotateCcw = IconFallback;
+const FastForward = IconFallback;
+const Maximize2 = IconFallback;
+const Volume2 = IconFallback;
+const VolumeX = IconFallback;
+const ExternalLink = IconFallback;
+const ChevronRight = IconFallback;
+const ChevronLeft = IconFallback;
+const Terminal = IconFallback;
+const Shield = IconFallback;
+const GitPullRequest = IconFallback;
+const Cpu = IconFallback;
+const Wifi = IconFallback;
+const Sparkles = IconFallback;
+const CheckCircle2 = IconFallback;
+const Sliders = IconFallback;
+const Eye = IconFallback;
+const Upload = IconFallback;
+const Zap = IconFallback;
+const Radio = IconFallback;
+const Code2 = IconFallback;
+const Award = IconFallback;
+const Users = IconFallback;
+
+// ============================================================================
+// DEFAULT CONFIGURATION & STATE
+// ============================================================================
+const DEFAULT_CONFIG = {
+  // Countdown Settings
+  timerMode: 'custom', // 'custom' | 'target' | 'static24'
+  targetDate: '2026-10-31',
+  targetTime: '10:15',
+  timezoneLabel: 'IST',
+  customHours: 24,
+  customMinutes: 0,
+  customSeconds: 0,
+  isRunning: false,
+  autoTransitionOnZero: true,
+
+  // Metadata Labels (Mode 1)
+  dateDisplay: '31 OCTOBER 2026',
+  timeDisplay: '10:15 AM IST',
+  locationDisplay: 'PUNE, INDIA',
+  etaLabel: 'E T A',
+  subTimerText: 'THE COUNTDOWN BEGINS',
+
+  // Organizer Info (Mode 2A)
+  organizerNameLine1: 'CHAITANYA',
+  organizerNameLine2: 'KAMBLE',
+  organizerRole: 'FOUNDER & COMMUNITY ORGANIZER',
+  organizerOrg: 'AIDN PUNE',
+  organizerGreeting: 'H E L L O !',
+  organizerCta: "LET'S BEGIN",
+  organizerPhotoUrl: '', // Empty uses high-precision stylized portrait + fallback
+
+  // Event Reveal Info (Mode 2B)
+  revealTopText: 'W E L C O M E   T O',
+  revealTitleLine1: 'HACKTOBERFEST',
+  revealTitleLine2: 'PUNE',
+  revealYear: '2026',
+
+  // Event & Venue Live Details (Mode 3)
+  wifiSsid: 'AIDN_HACKTOBERFEST_5G',
+  wifiPass: 'OpenSource2026!',
+  discordInvite: 'discord.gg/aidnpune',
+  mlhCheckinUrl: 'mlh.io/hacktoberfest-pune-26',
+  soundEnabled: true,
+  scanlinesEnabled: true,
+  particlesEnabled: true,
+};
+
+// Presentation Stage Sequence
+const STAGES = [
+  { id: 'COUNTDOWN', mode: 1, label: '1. Countdown (ETA 24:00:00)' },
+  { id: 'INTRO_ORGANIZER', mode: 2, label: '2A. Organizer Intro (Chaitanya Kamble)' },
+  { id: 'EVENT_REVEAL', mode: 2, label: '2B. Grand Reveal (Hacktoberfest Pune 2026)' },
+  { id: 'MLH_WHAT_IS', mode: 3, label: '3.1. What is Hacktoberfest & MLH?' },
+  { id: 'MLH_CODE_OF_CONDUCT', mode: 3, label: '3.2. MLH Code of Conduct & Safety' },
+  { id: 'MLH_RULES_2026', mode: 3, label: '3.3. Participation Rules & PR Quality' },
+  { id: 'MLH_AGENDA', mode: 3, label: '3.4. Opening Ceremony & Today’s Schedule' },
+  { id: 'MLH_REPOS', mode: 3, label: '3.5. Featured Open-Source Tracks & Repos' },
+  { id: 'MLH_WIFI_LAUNCH', mode: 3, label: '3.6. WiFi, Check-In & Happy Hacking!' },
+];
+
+// ============================================================================
+// WEB AUDIO SYNTHESIZER FOR CINEMATIC SFX (NO EXTERNAL ASSETS NEEDED)
+// ============================================================================
+class CyberAudioEngine {
+  constructor() {
+    this.ctx = null;
+  }
+
+  init() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playTick(isFinalTen = false) {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = isFinalTen ? 'sawtooth' : 'sine';
+      osc.frequency.setValueAtTime(isFinalTen ? 880 : 520, now);
+      osc.frequency.exponentialRampToValueAtTime(isFinalTen ? 440 : 260, now + 0.08);
+
+      gain.gain.setValueAtTime(isFinalTen ? 0.12 : 0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (e) {
+      // Ignore audio block errors if user hasn't interacted
+    }
+  }
+
+  playTransitionGlitch() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Sub-bass impact drop
+      const subOsc = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(140, now);
+      subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.65);
+      subGain.gain.setValueAtTime(0.25, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      subOsc.connect(subGain);
+      subGain.connect(this.ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 0.7);
+
+      // High-tech digital arpeggio burst
+      [660, 880, 1320, 1760].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.045);
+        gain.gain.setValueAtTime(0.07, now + idx * 0.045);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.045);
+        osc.stop(now + idx * 0.045 + 0.13);
+      });
+    } catch (e) {}
+  }
+}
+
+const sfx = new CyberAudioEngine();
+
+// ============================================================================
+// REUSABLE VISUAL BACKGROUND & HUD DECORATION (EXACT REFERENCE ARTWORK MATCH)
+// ============================================================================
+const TechnicalBackground = ({ scanlines = true, particles = true, showOuterHudCorners = false }) => {
+  // Deterministic floating geometric pixels matching the reference slides
+  const solidBlocks = [
+    // Left side clusters
+    { top: '12.5%', left: '6.8%', size: 10, color: '#FF1E27', glow: true },
+    { top: '16.5%', left: '11.4%', size: 12, color: '#FF1E27', glow: false },
+    { top: '22.8%', left: '5.5%', size: 28, color: '#0066FF', glow: true },
+    { top: '29.2%', left: '5.1%', size: 7, color: '#0066FF', glow: false },
+    { top: '34.5%', left: '14.2%', size: 15, color: '#0066FF', glow: true },
+    { top: '45.0%', left: '4.8%', size: 34, color: '#FF1E27', glow: true },
+    { top: '53.2%', left: '13.8%', size: 9, color: '#FF1E27', glow: false },
+    { top: '57.8%', left: '8.6%', size: 17, color: '#0066FF', glow: true },
+    { top: '76.8%', left: '8.7%', size: 22, color: '#FFB800', glow: true },
+    { top: '87.5%', left: '5.2%', size: 9, color: '#0066FF', glow: false },
+
+    // Right side clusters
+    { top: '6.8%', right: '3.6%', size: 11, color: '#0066FF', glow: false },
+    { top: '17.4%', right: '5.8%', size: 11, color: '#0066FF', glow: false },
+    { top: '22.8%', right: '9.8%', size: 11, color: '#FF1E27', glow: true },
+    { top: '26.4%', right: '5.1%', size: 24, color: '#FFB800', glow: true },
+    { top: '35.8%', right: '16.4%', size: 11, color: '#FF1E27', glow: false },
+    { top: '53.0%', right: '12.8%', size: 23, color: '#0066FF', glow: true },
+    { top: '56.5%', right: '3.8%', size: 10, color: '#FF1E27', glow: false },
+    { top: '66.4%', right: '3.6%', size: 30, color: '#FFB800', glow: true },
+    { top: '70.5%', right: '16.8%', size: 7, color: '#FFB800', glow: false },
+    { top: '75.2%', right: '10.6%', size: 12, color: '#0066FF', glow: false },
+    { top: '83.5%', right: '4.2%', size: 22, color: '#FF1E27', glow: true },
+  ];
+
+  const hollowSquares = [
+    { top: '34.5%', left: '9.2%', size: 20, color: '#FFB800' },
+    { top: '66.0%', left: '15.2%', size: 26, color: '#FFB800' },
+    { top: '39.2%', right: '10.8%', size: 22, color: '#FFB800' },
+  ];
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0 bg-[#030712]">
+      {/* Deep Radial Navy Illumination */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 48%, rgba(0, 72, 180, 0.16) 0%, rgba(4, 12, 32, 0.65) 52%, #02050d 100%)',
+        }}
+      />
+
+      {/* Primary Technical Grid (64px) */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(0, 110, 255, 0.11) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0, 110, 255, 0.11) 1px, transparent 1px)
+          `,
+          backgroundSize: '64px 64px',
+          backgroundPosition: 'center center',
+        }}
+      />
+
+      {/* Secondary Sub-Grid (16px subtle) */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(0, 110, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0, 110, 255, 0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: '16px 16px',
+          backgroundPosition: 'center center',
+        }}
+      />
+
+      {/* Left & Right Dotted Particle Matrices */}
+      <div
+        className="absolute left-0 top-[8%] bottom-[8%] w-[14vw] opacity-55"
+        style={{
+          backgroundImage: 'radial-gradient( rgba(0, 115, 255, 0.55) 1.25px, transparent 1.25px)',
+          backgroundSize: '12px 12px',
+          maskImage: 'linear-gradient(to right, black 20%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 100%)',
+        }}
+      />
+      <div
+        className="absolute left-0 top-[40%] h-[22vh] w-[9vw] opacity-55"
+        style={{
+          backgroundImage: 'radial-gradient( rgba(255, 30, 39, 0.6) 1.25px, transparent 1.25px)',
+          backgroundSize: '10px 10px',
+          maskImage: 'linear-gradient(to right, black 30%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, black 30%, transparent 100%)',
+        }}
+      />
+      <div
+        className="absolute right-0 top-[10%] bottom-[10%] w-[14vw] opacity-55"
+        style={{
+          backgroundImage: 'radial-gradient( rgba(0, 115, 255, 0.55) 1.25px, transparent 1.25px)',
+          backgroundSize: '12px 12px',
+          maskImage: 'linear-gradient(to left, black 20%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, black 20%, transparent 100%)',
+        }}
+      />
+      <div
+        className="absolute right-0 top-[35%] h-[25vh] w-[10vw] opacity-55"
+        style={{
+          backgroundImage: 'radial-gradient( rgba(255, 184, 0, 0.55) 1.25px, transparent 1.25px)',
+          backgroundSize: '11px 11px',
+          maskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
+        }}
+      />
+
+      {/* Horizontal Technical Dash / Glitch Accent Lines */}
+      <div className="absolute top-[12.8%] left-[5%] w-10 h-[1.5px] bg-[#FF1E27]/70" />
+      <div className="absolute top-[28%] left-[11.5%] w-14 h-[1.5px] bg-[#FF1E27]/60" />
+      <div className="absolute top-[48%] left-[3%] w-24 h-[1.5px] bg-[#FF1E27]/50" />
+      <div className="absolute top-[72%] left-[1.5%] w-16 h-[2px] bg-[#FFB800]/80" />
+      <div className="absolute top-[81%] left-[0.5%] w-14 h-[1.5px] bg-[#0066FF]/80" />
+
+      <div className="absolute top-[23.6%] right-[1%] w-16 h-[2px] bg-[#FFB800]/80" />
+      <div className="absolute top-[44.5%] right-[1.5%] w-20 h-[2px] bg-[#FFB800]/75" />
+      <div className="absolute top-[56%] right-[11%] w-16 h-[1.5px] bg-[#FF1E27]/70" />
+      <div className="absolute top-[84%] right-[9%] w-12 h-[1.5px] bg-[#FF1E27]/70" />
+
+      {/* Floating Geometric Solid Pixel Elements */}
+      {particles &&
+        solidBlocks.map((b, i) => (
+          <div
+            key={i}
+            className="absolute transition-transform duration-1000"
+            style={{
+              top: b.top,
+              left: b.left,
+              right: b.right,
+              width: `${b.size}px`,
+              height: `${b.size}px`,
+              backgroundColor: b.color,
+              boxShadow: b.glow ? `0 0 ${b.size * 0.9}px ${b.color}` : 'none',
+              animation: `floatPulse ${4 + (i % 5)}s ease-in-out infinite alternate`,
+              animationDelay: `${i * 0.25}s`,
+            }}
+          />
+        ))}
+
+      {/* Hollow Geometric Squares */}
+      {particles &&
+        hollowSquares.map((sq, i) => (
+          <div
+            key={`sq-${i}`}
+            className="absolute border"
+            style={{
+              top: sq.top,
+              left: sq.left,
+              right: sq.right,
+              width: `${sq.size}px`,
+              height: `${sq.size}px`,
+              borderColor: sq.color,
+              opacity: 0.75,
+            }}
+          />
+        ))}
+
+      {/* Optional Outer Screen Corner HUD Brackets (Matches Slide 2 Reference) */}
+      {showOuterHudCorners && (
+        <div className="absolute inset-6 md:inset-9 pointer-events-none">
+          {/* Top Left */}
+          <div className="absolute top-0 left-0 w-7 h-7 border-t-[3px] border-l-[3px] border-[#0066FF] rounded-tl-sm shadow-[0_0_12px_#0066FF]" />
+          {/* Top Right */}
+          <div className="absolute top-0 right-0 w-7 h-7 border-t-[3px] border-r-[3px] border-[#0066FF] rounded-tr-sm shadow-[0_0_12px_#0066FF]" />
+          {/* Bottom Left */}
+          <div className="absolute bottom-0 left-0 w-7 h-7 border-b-[3px] border-l-[3px] border-[#0066FF] rounded-bl-sm shadow-[0_0_12px_#0066FF]" />
+          {/* Bottom Right */}
+          <div className="absolute bottom-0 right-0 w-7 h-7 border-b-[3px] border-r-[3px] border-[#0066FF] rounded-br-sm shadow-[0_0_12px_#0066FF]" />
+        </div>
+      )}
+
+      {/* Subtle CRT Scanlines Overlay */}
+      {scanlines && (
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20"
+          style={{
+            background:
+              'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0, 0, 0, 0.45) 3px)',
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// BRANDING LOCKUP COMPONENT (AIDN PUNE X HACKTOBERFEST 26)
+// ============================================================================
+const TopBrandingLockup = ({ scale = 'normal' }) => {
+  const isSmall = scale === 'small';
+  return (
+    <div
+      className={`flex items-center justify-center gap-5 md:gap-7 select-none ${
+        isSmall ? 'scale-90' : ''
+      }`}
+    >
+      {/* AIDN PUNE Logo */}
+      <div className="flex items-center gap-3">
+        <svg
+          width="36"
+          height="32"
+          viewBox="0 0 40 36"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="drop-shadow-[0_0_10px_rgba(0,110,255,0.6)]"
+        >
+          {/* Outer Blue Delta */}
+          <path d="M20 2L38 34H29L20 18L11 34H2L20 2Z" fill="#0077FF" />
+          {/* Inner White Star/Apex Accent */}
+          <path d="M20 9L24.5 18H15.5L20 9Z" fill="#FFFFFF" />
+          {/* Bottom Crossbar */}
+          <path d="M13 26H27L30 32H10L13 26Z" fill="#0051CC" />
+        </svg>
+        <span
+          className="text-white font-semibold tracking-[0.22em] text-lg md:text-2xl uppercase"
+          style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+        >
+          AIDN PUNE
+        </span>
+      </div>
+
+      {/* Divider X */}
+      <div className="text-slate-400/70 text-sm md:text-lg font-light px-1">✕</div>
+
+      {/* Hosted by HACKTOBERFEST 26 */}
+      <div className="flex flex-col items-start">
+        <span className="text-[10px] md:text-xs text-slate-300 tracking-[0.12em] font-medium -mb-0.5">
+          Hosted by
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="text-white font-bold tracking-[0.08em] text-base md:text-xl uppercase"
+            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+          >
+            HACKTOBERFEST
+          </span>
+          <span
+            className="bg-white text-[#040814] font-black text-xs md:text-sm px-1.5 py-0.5 rounded-[2px] leading-none tracking-tighter"
+            style={{ fontFamily: "'Orbitron', sans-serif" }}
+          >
+            26
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// BAUHAUS GEOMETRIC "2026" SVG ARTWORK (EXACT MATCH TO SLIDE 3 REFERENCE)
+// ============================================================================
+const Geometric2026Artwork = () => {
+  return (
+    <svg
+      viewBox="0 0 530 155"
+      className="h-[10.5vw] max-h-[155px] min-h-[72px] w-auto inline-block align-baseline select-none drop-shadow-[0_0_24px_rgba(0,102,255,0.28)]"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* ==================== DIGIT 2 (First) ==================== */}
+      <g transform="translate(0, 5)">
+        {/* Top Red Bar + Diagonal Cut */}
+        <polygon points="8,8 92,8 92,38 42,38" fill="#E6192E" />
+        <polygon points="8,8 42,38 8,38" fill="#8C0D1B" />
+        {/* Right Upper Blue Vertical Block */}
+        <rect x="92" y="8" width="28" height="60" fill="#0066FF" />
+        <polygon points="92,8 120,8 92,38" fill="#3399FF" />
+        {/* Middle Blue Step Bar */}
+        <rect x="34" y="62" width="58" height="26" fill="#0066FF" />
+        <rect x="8" y="62" width="26" height="26" fill="#0044AA" />
+        {/* Lower Left Blue Vertical */}
+        <rect x="8" y="88" width="26" height="54" fill="#0055DD" />
+        {/* Bottom Red Base */}
+        <polygon points="34,114 120,114 120,142 34,142" fill="#E6192E" />
+        <polygon points="34,114 70,114 34,142" fill="#990F1E" />
+        <polygon points="94,114 120,114 120,142" fill="#FF3B1E" />
+      </g>
+
+      {/* ==================== DIGIT 0 ==================== */}
+      <g transform="translate(132, 5)">
+        {/* Top Red/Orange Frame */}
+        <polygon points="6,8 118,8 92,34 32,34" fill="#FF2A2A" />
+        {/* Left Red Column */}
+        <polygon points="6,8 32,34 32,114 6,142" fill="#D91629" />
+        {/* Center Geometric Diagonal Split (Yellow / Orange / Red) */}
+        <polygon points="32,34 92,34 32,114" fill="#121829" />
+        <polygon points="92,34 92,114 32,114" fill="#FFB800" />
+        <polygon points="62,74 92,34 92,114" fill="#FF9900" />
+        {/* Right Blue Column */}
+        <polygon points="118,8 118,142 92,114 92,34" fill="#0066FF" />
+        <rect x="92" y="55" width="26" height="45" fill="#1A75FF" />
+        {/* Bottom Red/Yellow Base */}
+        <polygon points="32,114 92,114 118,142 6,142" fill="#FF2A2A" />
+        <polygon points="6,142 32,114 55,142" fill="#FFB800" />
+      </g>
+
+      {/* ==================== DIGIT 2 (Second) ==================== */}
+      <g transform="translate(264, 5)">
+        {/* Top Blue Block */}
+        <rect x="8" y="8" width="84" height="28" fill="#0066FF" />
+        <polygon points="8,8 40,8 8,36" fill="#0044AA" />
+        {/* Right Upper Blue Vertical */}
+        <rect x="92" y="8" width="26" height="56" fill="#1E88E5" />
+        {/* Center Diagonal Pixel Staircase in Yellow */}
+        <rect x="66" y="64" width="26" height="26" fill="#FFD000" />
+        <rect x="40" y="90" width="26" height="26" fill="#FFB800" />
+        <rect x="14" y="116" width="26" height="26" fill="#FF9900" />
+        {/* Left Middle Blue Accent */}
+        <rect x="8" y="52" width="26" height="32" fill="#0055DD" />
+        {/* Bottom Red Triangle & Bar */}
+        <polygon points="40,142 92,90 118,142" fill="#D91629" />
+        <polygon points="66,116 118,142 40,142" fill="#9E0B1C" />
+      </g>
+
+      {/* ==================== DIGIT 6 ==================== */}
+      <g transform="translate(396, 5)">
+        {/* Top Blue Horizontal & Left Spine */}
+        <polygon points="8,8 114,8 88,34 34,34" fill="#1A75FF" />
+        <rect x="88" y="22" width="28" height="22" fill="#0055DD" />
+        <polygon points="8,8 34,34 34,84 8,84" fill="#0044AA" />
+        {/* Middle Red Diagonal Slash */}
+        <polygon points="8,62 116,88 116,114 8,88" fill="#FF1E27" />
+        {/* Bottom Left Yellow/Orange Triangle */}
+        <polygon points="8,88 88,142 8,142" fill="#FFB800" />
+        <polygon points="8,88 48,142 8,142" fill="#FF9500" />
+        {/* Right Lower Red Vertical */}
+        <rect x="88" y="88" width="28" height="54" fill="#E6192E" />
+      </g>
+    </svg>
+  );
+};
+
+// ============================================================================
+// ORGANIZER PORTRAIT COMPONENT (WITH HIGH-TECH STYLIZED FALLBACK + UPLOAD)
+// ============================================================================
+const OrganizerPortraitFrame = ({ photoUrl, onUploadClick }) => {
+  return (
+    <div className="relative w-[290px] h-[350px] md:w-[360px] md:h-[430px] lg:w-[400px] lg:h-[470px] flex items-center justify-center select-none group">
+      {/* Radial Electric Blue Backlight Glow */}
+      <div
+        className="absolute inset-2 rounded-lg opacity-80 blur-2xl pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 55%, rgba(0, 110, 255, 0.55) 0%, rgba(0, 50, 140, 0.25) 55%, transparent 80%)',
+        }}
+      />
+
+      {/* Inner Subtle Dotted Cyber Matrix Behind Subject */}
+      <div
+        className="absolute inset-6 opacity-45 pointer-events-none border border-[#0066FF]/25 bg-[#040d21]/60"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(0, 132, 255, 0.7) 1.5px, transparent 1.5px)',
+          backgroundSize: '14px 14px',
+        }}
+      />
+
+      {/* 4 HUD Blue Corner L-Brackets */}
+      {/* Top-Left */}
+      <div className="absolute top-4 left-4 w-9 h-9 border-t-[4px] border-l-[4px] border-[#0077FF] rounded-tl-md shadow-[0_0_15px_#0077FF] z-20" />
+      {/* Top-Right */}
+      <div className="absolute top-4 right-4 w-9 h-9 border-t-[4px] border-r-[4px] border-[#0077FF] rounded-tr-md shadow-[0_0_15px_#0077FF] z-20" />
+      {/* Bottom-Left */}
+      <div className="absolute bottom-4 left-4 w-9 h-9 border-b-[4px] border-l-[4px] border-[#0077FF] rounded-bl-md shadow-[0_0_15px_#0077FF] z-20" />
+      {/* Bottom-Right */}
+      <div className="absolute bottom-4 right-4 w-9 h-9 border-b-[4px] border-r-[4px] border-[#0077FF] rounded-br-md shadow-[0_0_15px_#0077FF] z-20" />
+
+      {/* Portrait Image or High-Precision Vector Executive Illustration Matching Reference */}
+      <div className="relative z-10 w-[86%] h-[92%] overflow-hidden flex items-end justify-center">
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt="Chaitanya Kamble - Founder & Community Organizer"
+            className="w-full h-full object-cover object-top drop-shadow-[0_10px_25px_rgba(0,80,255,0.4)]"
+          />
+        ) : (
+          /* High-Precision Executive Portrait SVG (Royal Blue 3-Piece Suit, Patterned Tie, Watch, Pose matching reference slide) */
+          <svg
+            viewBox="0 0 400 460"
+            className="w-full h-full drop-shadow-[0_0_25px_rgba(0,102,255,0.35)]"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <linearGradient id="suitGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#14388C" />
+                <stop offset="50%" stopColor="#0D2563" />
+                <stop offset="100%" stopColor="#07153B" />
+              </linearGradient>
+              <linearGradient id="lapelGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1D4ED8" />
+                <stop offset="100%" stopColor="#0A1E54" />
+              </linearGradient>
+              <linearGradient id="skinGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#D99B72" />
+                <stop offset="100%" stopColor="#B87A52" />
+              </linearGradient>
+            </defs>
+
+            {/* Ambient Shoulder Rim Light */}
+            <path
+              d="M52 460 L75 300 C80 265 115 245 155 235 L245 235 C285 245 320 265 335 300 L358 460 Z"
+              fill="url(#suitGrad)"
+              stroke="#2563EB"
+              strokeWidth="2"
+            />
+
+            {/* White Dress Shirt Collar */}
+            <polygon points="160,218 200,268 240,218 230,202 170,202" fill="#F8FAFC" />
+            <polygon points="163,215 196,262 175,288 152,235" fill="#E2E8F0" />
+            <polygon points="237,215 204,262 225,288 248,235" fill="#CBD5E1" />
+
+            {/* Navy Patterned Silk Tie */}
+            <polygon points="192,252 208,252 213,270 198,274 187,270" fill="#0F296B" />
+            <polygon points="190,272 210,272 216,355 200,378 184,355" fill="#173A8A" />
+            {/* Tie Floral/Tech Micro Pattern */}
+            <circle cx="198" cy="290" r="2.5" fill="#93C5FD" />
+            <circle cx="205" cy="308" r="2" fill="#DBEAFE" />
+            <circle cx="194" cy="322" r="2.5" fill="#60A5FA" />
+            <circle cx="203" cy="338" r="2" fill="#93C5FD" />
+
+            {/* Waistcoat / Vest */}
+            <polygon points="155,235 198,355 198,460 135,460" fill="#091B47" />
+            <polygon points="245,235 202,355 202,460 265,460" fill="#08173D" />
+            <circle cx="197" cy="372" r="3.5" fill="#1E3A8A" stroke="#60A5FA" strokeWidth="1" />
+            <circle cx="197" cy="398" r="3.5" fill="#1E3A8A" stroke="#60A5FA" strokeWidth="1" />
+
+            {/* Suit Jacket Lapels */}
+            <polygon points="154,230 195,368 158,380 128,275" fill="url(#lapelGrad)" />
+            <polygon points="246,230 205,368 242,380 272,275" fill="url(#lapelGrad)" />
+
+            {/* Pocket Square (Right Chest) */}
+            <polygon points="245,325 278,325 272,310 252,315" fill="#1E40AF" stroke="#60A5FA" strokeWidth="1" />
+
+            {/* Neck */}
+            <rect x="174" y="182" width="52" height="45" rx="14" fill="url(#skinGrad)" />
+            <path d="M174 198 Q200 218 226 198" fill="#9E623C" opacity="0.45" />
+
+            {/* Ears */}
+            <ellipse cx="146" cy="142" rx="10" ry="18" fill="#C6865E" />
+            <ellipse cx="254" cy="142" rx="10" ry="18" fill="#C6865E" />
+
+            {/* Head / Face */}
+            <path
+              d="M150 105 C150 72 250 72 250 105 L248 158 C248 188 222 206 200 206 C178 206 152 188 152 158 Z"
+              fill="url(#skinGrad)"
+            />
+
+            {/* Styled Voluminous Dark Hair */}
+            <path
+              d="M144 122 C136 88 148 54 185 48 C205 42 238 46 254 66 C266 80 262 108 252 124 C250 102 242 88 225 84 C200 80 172 82 156 96 C150 104 148 115 144 122 Z"
+              fill="#111827"
+            />
+            <path
+              d="M152 64 C175 44 222 44 246 62 C232 54 185 54 152 64 Z"
+              fill="#1F2937"
+            />
+
+            {/* Eyebrows & Eyes */}
+            <path d="M164 122 Q178 117 190 122" stroke="#111827" strokeWidth="4" strokeLinecap="round" />
+            <path d="M210 122 Q222 117 236 122" stroke="#111827" strokeWidth="4" strokeLinecap="round" />
+            <ellipse cx="177" cy="132" rx="7" ry="4.5" fill="#111827" />
+            <circle cx="179" cy="131" r="1.5" fill="#FFFFFF" />
+            <ellipse cx="223" cy="132" rx="7" ry="4.5" fill="#111827" />
+            <circle cx="225" cy="131" r="1.5" fill="#FFFFFF" />
+
+            {/* Nose & Confident Subtle Smile */}
+            <path d="M200 132 L196 156 L205 158" stroke="#9A5B37" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M184 173 Q200 180 216 173" stroke="#7C4222" strokeWidth="3" strokeLinecap="round" fill="none" />
+
+            {/* Forearm & Hand Adjusting Jacket Pose (Matching Reference Photo) */}
+            <path
+              d="M335 315 L355 445 L245 435 L252 385 L305 390 Z"
+              fill="#0A1E52"
+              stroke="#1E40AF"
+              strokeWidth="1.5"
+            />
+            {/* White Shirt Cuff + Silver Chronograph Watch */}
+            <rect x="236" y="386" width="18" height="44" rx="3" fill="#F1F5F9" transform="rotate(8 236 386)" />
+            <rect x="226" y="388" width="14" height="42" rx="2" fill="#94A3B8" transform="rotate(8 226 388)" />
+            <circle cx="231" cy="409" r="11" fill="#0F172A" stroke="#CBD5E1" strokeWidth="3" />
+            {/* Right Hand Holding Lapel */}
+            <path
+              d="M188 370 C205 366 225 375 228 392 L224 422 C210 426 190 420 184 405 Z"
+              fill="url(#skinGrad)"
+            />
+          </svg>
+        )}
+
+        {/* Quick Photo Swap Hover Button for Presenter */}
+        {onUploadClick && (
+          <button
+            onClick={onUploadClick}
+            className="absolute bottom-3 right-3 bg-[#050d24]/90 hover:bg-[#0066FF] text-xs text-white/90 px-3 py-1.5 rounded border border-[#0066FF] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 shadow-lg pointer-events-auto"
+            title="Upload exact speaker portrait image"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Swap Photo
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODE 1: CONFIGURABLE COUNTDOWN VIEW (EXACT MATCH TO IMAGE 1)
+// ============================================================================
+const Mode1CountdownView = ({ config, remainingSeconds, onTriggerNext }) => {
+  const formatTime = (totalSec) => {
+    const clamped = Math.max(0, Math.floor(totalSec));
+    const hrs = Math.floor(clamped / 3600);
+    const mins = Math.floor((clamped % 3600) / 60);
+    const secs = clamped % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const displayTime =
+    config.timerMode === 'static24' ? '24:00:00' : formatTime(remainingSeconds);
+
+  const isFinalTen = remainingSeconds > 0 && remainingSeconds <= 10 && config.timerMode !== 'static24';
+
+  return (
+    <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-[11vh] px-8 select-none">
+      {/* 1. Top Branding Lockup */}
+      <div className="mt-2">
+        <TopBrandingLockup />
+      </div>
+
+      {/* 2. Centerpiece ETA + Digital Countdown Box */}
+      <div className="flex flex-col items-center justify-center my-auto w-full max-w-6xl">
+        {/* [ E T A ] Bracket Header */}
+        <div className="flex items-center justify-center gap-4 mb-5 w-full">
+          {/* Left Red Line + Bracket */}
+          <div className="flex items-center">
+            <div className="w-16 md:w-28 h-[1.5px] bg-[#FF1E27]" />
+            <div className="w-3.5 h-8 md:h-10 border-t-2 border-b-2 border-l-2 border-[#FF1E27]" />
+          </div>
+
+          {/* E T A Text */}
+          <span
+            className="text-white text-2xl md:text-4xl font-semibold tracking-[0.55em] pl-[0.55em] uppercase"
+            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+          >
+            {config.etaLabel}
+          </span>
+
+          {/* Right Yellow Bracket + Line */}
+          <div className="flex items-center">
+            <div className="w-3.5 h-8 md:h-10 border-t-2 border-b-2 border-r-2 border-[#FFB800]" />
+            <div className="w-16 md:w-28 h-[1.5px] bg-[#FFB800]" />
+          </div>
+        </div>
+
+        {/* Massive Framed Countdown Display */}
+        <div className="relative px-8 sm:px-14 md:px-20 py-4 md:py-6 flex items-center justify-center">
+          {/* Top-Left Electric Blue L-Bracket */}
+          <div className="absolute top-0 left-0 w-8 h-8 md:w-12 md:h-12 border-t-[4px] border-l-[4px] border-[#0077FF] shadow-[0_0_15px_#0077FF]" />
+          {/* Bottom-Left Crimson Red L-Bracket */}
+          <div className="absolute bottom-0 left-0 w-8 h-8 md:w-12 md:h-12 border-b-[4px] border-l-[4px] border-[#FF1E27] shadow-[0_0_15px_#FF1E27]" />
+          {/* Top-Right Crimson Red L-Bracket */}
+          <div className="absolute top-0 right-0 w-8 h-8 md:w-12 md:h-12 border-t-[4px] border-r-[4px] border-[#FF1E27] shadow-[0_0_15px_#FF1E27]" />
+          {/* Bottom-Right Electric Blue L-Bracket */}
+          <div className="absolute bottom-0 right-0 w-8 h-8 md:w-12 md:h-12 border-b-[4px] border-r-[4px] border-[#0077FF] shadow-[0_0_15px_#0077FF]" />
+
+          {/* Digital Numerals */}
+          <div
+            onClick={onTriggerNext}
+            title="Click or press Space to advance when ready"
+            className={`cursor-pointer font-black tracking-[0.04em] leading-none text-[13vw] xl:text-[172px] transition-all duration-200 ${
+              isFinalTen ? 'text-[#FFB800] scale-105' : 'text-white'
+            }`}
+            style={{
+              fontFamily: "'Orbitron', 'Chakra Petch', monospace",
+              textShadow: isFinalTen
+                ? '0 0 30px rgba(255, 184, 0, 0.85), 0 0 70px rgba(255, 30, 39, 0.5)'
+                : '0 0 24px rgba(0, 140, 255, 0.65), 0 0 55px rgba(0, 102, 255, 0.35)',
+            }}
+          >
+            {displayTime}
+          </div>
+        </div>
+
+        {/* — THE COUNTDOWN BEGINS — */}
+        <div className="flex items-center justify-center gap-5 mt-6">
+          <div className="w-8 md:w-14 h-[1.5px] bg-slate-300/80" />
+          <span
+            className="text-white/95 text-sm sm:text-base md:text-xl tracking-[0.38em] pl-[0.38em] uppercase font-medium"
+            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+          >
+            {config.subTimerText}
+          </span>
+          <div className="w-8 md:w-14 h-[1.5px] bg-slate-300/80" />
+        </div>
+      </div>
+
+      {/* 3. Bottom Metadata Bar (Date | Time | Location) */}
+      <div
+        className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-xs sm:text-sm md:text-base tracking-[0.22em] font-semibold uppercase"
+        style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+      >
+        {/* Date */}
+        <div className="flex items-center gap-3">
+          <Calendar className="w-5 h-5 text-[#0088FF] drop-shadow-[0_0_8px_rgba(0,136,255,0.7)]" />
+          <span className="text-white">
+            <span className="text-[#0088FF]">{config.dateDisplay.split(' ')[0]}</span>{' '}
+            {config.dateDisplay.split(' ').slice(1).join(' ')}
+          </span>
+        </div>
+
+        <div className="hidden sm:block h-6 w-[1px] bg-slate-600/80" />
+
+        {/* Time (Yellow Highlight as in Reference Artwork) */}
+        <div className="flex items-center gap-3">
+          <Clock className="w-5 h-5 text-[#0088FF] drop-shadow-[0_0_8px_rgba(0,136,255,0.7)]" />
+          <span className="text-[#FFB800] drop-shadow-[0_0_8px_rgba(255,184,0,0.3)]">
+            {config.timeDisplay}
+          </span>
+        </div>
+
+        <div className="hidden sm:block h-6 w-[1px] bg-slate-600/80" />
+
+        {/* Location */}
+        <div className="flex items-center gap-3">
+          <MapPin className="w-5 h-5 text-[#0088FF] drop-shadow-[0_0_8px_rgba(0,136,255,0.7)]" />
+          <span className="text-white">{config.locationDisplay}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODE 2A: ORGANIZER INTRODUCTION VIEW (EXACT MATCH TO IMAGE 2)
+// ============================================================================
+const Mode2AOrganizerIntroView = ({ config, onNextStage, onUploadPhoto }) => {
+  return (
+    <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-[7vh] px-10 md:px-20 select-none">
+      {/* Top Header: — H E L L O ! — */}
+      <div className="flex items-center justify-center gap-5 mt-1">
+        <div className="w-10 md:w-16 h-[2px] bg-[#0077FF] shadow-[0_0_8px_#0077FF]" />
+        <h2
+          className="text-white text-2xl md:text-4xl font-bold tracking-[0.45em] pl-[0.45em] uppercase"
+          style={{ fontFamily: "'Orbitron', 'Chakra Petch', sans-serif" }}
+        >
+          {config.organizerGreeting}
+        </h2>
+        <div className="w-10 md:w-16 h-[2px] bg-[#0077FF] shadow-[0_0_8px_#0077FF]" />
+      </div>
+
+      {/* Main Split Content: Left Portrait Frame + Right Vertical Bar & Typography */}
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-8 md:gap-14 lg:gap-16 my-auto w-full max-w-6xl">
+        {/* Left: Framed Portrait */}
+        <OrganizerPortraitFrame
+          photoUrl={config.organizerPhotoUrl}
+          onUploadClick={onUploadPhoto}
+        />
+
+        {/* Center/Right: Electric Blue Vertical Divider + Organizer Typography */}
+        <div className="flex items-stretch gap-6 md:gap-9">
+          {/* Vertical Electric Blue Accent Line with End Ticks */}
+          <div className="relative flex flex-col items-center">
+            <div className="w-2.5 h-[2px] bg-[#0088FF]" />
+            <div className="w-[3px] flex-1 bg-gradient-to-b from-[#0088FF] via-[#0066FF] to-[#0088FF] shadow-[0_0_12px_#0077FF]" />
+            <div className="w-2.5 h-[2px] bg-[#0088FF]" />
+          </div>
+
+          {/* Stacked Name & Role */}
+          <div className="flex flex-col justify-center text-left py-2">
+            <h1
+              className="text-white font-black text-4xl sm:text-6xl xl:text-7xl tracking-[0.12em] leading-[1.08] uppercase"
+              style={{
+                fontFamily: "'Orbitron', 'Chakra Petch', sans-serif",
+                textShadow: '0 0 25px rgba(0, 120, 255, 0.45)',
+              }}
+            >
+              <span className="block">{config.organizerNameLine1}</span>
+              <span className="block mt-1">{config.organizerNameLine2}</span>
+            </h1>
+
+            <div
+              className="mt-5 text-[#0077FF] font-extrabold text-base sm:text-xl xl:text-2xl tracking-[0.16em] uppercase"
+              style={{
+                fontFamily: "'Chakra Petch', sans-serif",
+                textShadow: '0 0 14px rgba(0, 119, 255, 0.4)',
+              }}
+            >
+              {config.organizerRole}
+            </div>
+
+            <div
+              className="mt-2 text-white/95 font-medium text-sm sm:text-lg xl:text-xl tracking-[0.25em] uppercase"
+              style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+            >
+              {config.organizerOrg}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Chamfered HUD Button: LET'S BEGIN -> */}
+      <div className="flex items-center justify-center gap-6 mb-1">
+        <div className="hidden sm:block w-12 h-[1.5px] bg-[#0066FF]/70" />
+
+        <button
+          onClick={onNextStage}
+          className="group relative px-10 md:px-14 py-3.5 md:py-4 bg-[#040d24]/90 hover:bg-[#0066FF]/25 active:scale-95 transition-all duration-200 cursor-pointer"
+          style={{
+            clipPath:
+              'polygon(14px 0%, calc(100% - 14px) 0%, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0% calc(100% - 14px), 0% 14px)',
+            boxShadow: 'inset 0 0 22px rgba(0, 102, 255, 0.45)',
+          }}
+        >
+          {/* Glowing Chamfer Border SVG */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 280 56"
+            preserveAspectRatio="none"
+          >
+            <polygon
+              points="12,2 268,2 278,12 278,44 268,54 12,54 2,44 2,12"
+              fill="none"
+              stroke="#0077FF"
+              strokeWidth="2.5"
+            />
+          </svg>
+
+          <div
+            className="relative z-10 flex items-center gap-4 text-white font-bold text-sm md:text-lg tracking-[0.28em] pl-[0.28em] uppercase"
+            style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+          >
+            <span>{config.organizerCta}</span>
+            <span className="text-[#0088FF] group-hover:translate-x-1.5 transition-transform duration-200 text-xl leading-none">
+              →
+            </span>
+          </div>
+        </button>
+
+        <div className="hidden sm:block w-12 h-[1.5px] bg-[#0066FF]/70" />
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODE 2B: GRAND EVENT REVEAL VIEW (EXACT MATCH TO IMAGE 3)
+// ============================================================================
+const Mode2BEventRevealView = ({ config, onNextStage }) => {
+  return (
+    <div
+      onClick={onNextStage}
+      className="relative z-10 w-full h-full flex flex-col items-center justify-center px-6 md:px-16 select-none cursor-pointer"
+    >
+      {/* Top [ — WELCOME TO — ] Header */}
+      <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 md:mb-8">
+        {/* Left Cyan/Blue Bracket + Line */}
+        <div className="flex items-center">
+          <div className="w-3.5 h-9 md:h-11 border-t-2 border-b-2 border-l-2 border-[#0088FF]" />
+          <div className="w-12 sm:w-20 md:w-28 h-[2px] bg-[#0088FF] ml-2" />
+        </div>
+
+        <span
+          className="text-white text-base sm:text-xl md:text-2xl font-medium tracking-[0.42em] pl-[0.42em] uppercase"
+          style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+        >
+          WELCOME TO
+        </span>
+
+        {/* Right Red Line + Bracket */}
+        <div className="flex items-center">
+          <div className="w-12 sm:w-20 md:w-28 h-[2px] bg-[#FF1E27] mr-2" />
+          <div className="w-3.5 h-9 md:h-11 border-t-2 border-b-2 border-r-2 border-[#FF1E27]" />
+        </div>
+      </div>
+
+      {/* Main Framed Reveal Block */}
+      <div className="relative px-6 sm:px-12 md:px-16 py-6 md:py-10 flex flex-col items-center justify-center max-w-[94vw]">
+        {/* Top-Left Electric Blue L-Bracket */}
+        <div className="absolute -top-2 -left-2 w-9 h-9 md:w-14 md:h-14 border-t-[4px] border-l-[4px] border-[#0077FF] shadow-[0_0_16px_#0077FF]" />
+        {/* Bottom-Left Electric Blue L-Bracket */}
+        <div className="absolute -bottom-2 -left-2 w-9 h-9 md:w-14 md:h-14 border-b-[4px] border-l-[4px] border-[#0077FF] shadow-[0_0_16px_#0077FF]" />
+        {/* Top-Right Crimson Red L-Bracket */}
+        <div className="absolute -top-2 -right-2 w-9 h-9 md:w-14 md:h-14 border-t-[4px] border-r-[4px] border-[#FF1E27] shadow-[0_0_16px_#FF1E27]" />
+        {/* Bottom-Right Electric Blue L-Bracket */}
+        <div className="absolute -bottom-2 -right-2 w-9 h-9 md:w-14 md:h-14 border-b-[4px] border-r-[4px] border-[#0077FF] shadow-[0_0_16px_#0077FF]" />
+
+        {/* Line 1: HACKTOBERFEST with Cyber Glitch Brush Texture Edges */}
+        <div className="relative">
+          {/* Subtle Horizontal Glitch Edge Artifacts behind text */}
+          <div className="absolute -left-6 top-1/4 w-10 h-1 bg-white/60 blur-[0.5px]" />
+          <div className="absolute -left-4 bottom-1/3 w-8 h-0.5 bg-[#0088FF]/80" />
+          <div className="absolute -right-6 top-1/3 w-12 h-1 bg-white/60 blur-[0.5px]" />
+          <div className="absolute -right-4 bottom-1/4 w-9 h-0.5 bg-[#FF1E27]/80" />
+
+          <h1
+            className="text-white font-black uppercase tracking-[0.03em] leading-[0.95] text-[10.8vw] xl:text-[148px] select-none"
+            style={{
+              fontFamily: "'Orbitron', 'Chakra Petch', sans-serif",
+              textShadow:
+                '-3px 0px 0px rgba(0, 110, 255, 0.55), 3px 0px 0px rgba(255, 30, 39, 0.45), 0 0 35px rgba(255, 255, 255, 0.25)',
+            }}
+          >
+            {config.revealTitleLine1}
+          </h1>
+        </div>
+
+        {/* Line 2: PUNE + Geometric Bauhaus 2026 */}
+        <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-10 mt-3 md:mt-5">
+          <span
+            className="text-white font-black uppercase tracking-[0.04em] leading-none text-[10.5vw] xl:text-[142px]"
+            style={{
+              fontFamily: "'Orbitron', 'Chakra Petch', sans-serif",
+              textShadow:
+                '-3px 0px 0px rgba(0, 110, 255, 0.55), 0 0 30px rgba(255, 255, 255, 0.22)',
+            }}
+          >
+            {config.revealTitleLine2}
+          </span>
+
+          {/* Custom Geometric 2026 Artwork */}
+          <Geometric2026Artwork />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODE 3: OFFICIAL HACKTOBERFEST x MLH PRESENTATION DECK
+// ============================================================================
+const Mode3MlhDeckView = ({ stageId, config, onNext, onPrev, currentSlideIndex, totalSlides }) => {
+  return (
+    <div className="relative z-10 w-full h-full flex flex-col justify-between py-[5.5vh] px-10 md:px-20 select-none">
+      {/* Top Consistent HUD Header Bar */}
+      <div className="flex items-center justify-between border-b border-[#0066FF]/30 pb-4">
+        <TopBrandingLockup scale="small" />
+
+        {/* Official MLH x DigitalOcean Partner Badge */}
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[#06122e] border border-[#0066FF]/50 rounded-sm">
+            <span className="w-2 h-2 rounded-full bg-[#FF1E27] animate-pulse" />
+            <span
+              className="text-xs tracking-[0.2em] text-white font-bold uppercase"
+              style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+            >
+              MLH OFFICIAL MEMBER EVENT
+            </span>
+          </div>
+          <div
+            className="text-xs text-[#0088FF] font-mono tracking-widest px-3 py-1.5 border border-[#0088FF]/30 bg-[#040b1d]"
+          >
+            SLIDE 0{currentSlideIndex} / 0{totalSlides}
+          </div>
+        </div>
+      </div>
+
+      {/* Center Slide Body */}
+      <div className="my-auto py-4 w-full max-w-7xl mx-auto">
+        {stageId === 'MLH_WHAT_IS' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 text-[#FFB800] text-sm font-bold tracking-[0.3em] uppercase">
+                <Sparkles className="w-4 h-4" />
+                <span>GLOBAL OPEN SOURCE CELEBRATION</span>
+              </div>
+              <h1
+                className="text-white text-4xl sm:text-6xl font-black tracking-wide uppercase leading-tight"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                WHAT IS{' '}
+                <span className="text-[#0088FF] drop-shadow-[0_0_20px_rgba(0,136,255,0.5)]">
+                  HACKTOBERFEST?
+                </span>
+              </h1>
+              <p className="text-slate-200 text-lg md:text-2xl leading-relaxed font-normal max-w-3xl">
+                Hacktoberfest is a month-long global celebration of open-source projects, their
+                maintainers, and the global community of contributors — powered by{' '}
+                <span className="text-white font-semibold">DigitalOcean</span>,{' '}
+                <span className="text-[#FF1E27] font-semibold">Major League Hacking (MLH)</span>, and{' '}
+                <span className="text-[#0088FF] font-semibold">AIDN Pune</span>.
+              </p>
+
+              <div className="grid grid-cols-3 gap-4 pt-4">
+                <div className="p-5 bg-[#050f26]/90 border-l-4 border-[#0077FF]">
+                  <div
+                    className="text-3xl md:text-4xl font-black text-white"
+                    style={{ fontFamily: "'Orbitron', sans-serif" }}
+                  >
+                    13th
+                  </div>
+                  <div className="text-xs md:text-sm text-slate-300 tracking-[0.15em] uppercase mt-1">
+                    ANNUAL EDITION (2026)
+                  </div>
+                </div>
+                <div className="p-5 bg-[#050f26]/90 border-l-4 border-[#FF1E27]">
+                  <div
+                    className="text-3xl md:text-4xl font-black text-white"
+                    style={{ fontFamily: "'Orbitron', sans-serif" }}
+                  >
+                    4 PRs
+                  </div>
+                  <div className="text-xs md:text-sm text-slate-300 tracking-[0.15em] uppercase mt-1">
+                    QUALITY CONTRIBUTIONS
+                  </div>
+                </div>
+                <div className="p-5 bg-[#050f26]/90 border-l-4 border-[#FFB800]">
+                  <div
+                    className="text-3xl md:text-4xl font-black text-white"
+                    style={{ fontFamily: "'Orbitron', sans-serif" }}
+                  >
+                    100%
+                  </div>
+                  <div className="text-xs md:text-sm text-slate-300 tracking-[0.15em] uppercase mt-1">
+                    COMMUNITY DRIVEN
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right HUD Feature Card */}
+            <div className="lg:col-span-5 relative p-8 bg-[#050e24]/90 border border-[#0077FF]/50 space-y-6">
+              <div className="w-6 h-6 border-t-2 border-l-2 border-[#0088FF] absolute -top-1 -left-1" />
+              <div className="w-6 h-6 border-b-2 border-r-2 border-[#FF1E27] absolute -bottom-1 -right-1" />
+
+              <div className="text-sm text-[#0088FF] font-bold tracking-[0.25em] uppercase">
+                CORE PILLARS FOR 2026
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-[#0066FF]/20 border border-[#0066FF] text-[#0088FF]">
+                    <Code2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg tracking-wider uppercase">
+                      EVERYONE IS WELCOME
+                    </h3>
+                    <p className="text-slate-300 text-sm md:text-base mt-1">
+                      Whether you are writing code, improving documentation, designing UI, or triaging bugs.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-[#FF1E27]/20 border border-[#FF1E27] text-[#FF1E27]">
+                    <GitPullRequest className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg tracking-wider uppercase">
+                      QUANTITY IS FUN, QUALITY IS KEY
+                    </h3>
+                    <p className="text-slate-300 text-sm md:text-base mt-1">
+                      Meaningful contributions leave a lasting impact on open-source software worldwide.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-[#FFB800]/20 border border-[#FFB800] text-[#FFB800]">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg tracking-wider uppercase">
+                      SHORT-TERM ACTION, LONG-TERM IMPACT
+                    </h3>
+                    <p className="text-slate-300 text-sm md:text-base mt-1">
+                      Build skills, connect with Pune’s developer ecosystem, and support open maintainers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stageId === 'MLH_CODE_OF_CONDUCT' && (
+          <div className="space-y-8">
+            <div className="text-center max-w-4xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 text-[#FF1E27] text-sm font-bold tracking-[0.3em] uppercase">
+                <Shield className="w-4 h-4" />
+                <span>MAJOR LEAGUE HACKING OFFICIAL POLICY</span>
+              </div>
+              <h1
+                className="text-white text-4xl sm:text-6xl font-black tracking-wide uppercase"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                MLH CODE OF <span className="text-[#0088FF]">CONDUCT</span>
+              </h1>
+              <p className="text-slate-300 text-lg md:text-xl">
+                AIDN Pune & Major League Hacking are dedicated to providing a safe, respectful, and
+                harassment-free experience for everyone.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="relative p-7 bg-[#050e24]/95 border border-[#0077FF]/50">
+                <div className="text-[#0088FF] font-black text-3xl font-mono mb-3">01 // RESPECT</div>
+                <h3 className="text-white text-xl font-bold tracking-wider uppercase mb-2">
+                  BE INCLUSIVE & WELCOMING
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  Treat all hackers, mentors, speakers, and volunteers with respect. Zero tolerance for
+                  harassment, discrimination, or exclusionary behavior.
+                </p>
+              </div>
+
+              <div className="relative p-7 bg-[#050e24]/95 border border-[#FFB800]/60">
+                <div className="text-[#FFB800] font-black text-3xl font-mono mb-3">02 // INTEGRITY</div>
+                <h3 className="text-white text-xl font-bold tracking-wider uppercase mb-2">
+                  RESPECT MAINTAINERS
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  Open-source maintainers volunteer their time. Follow repository contribution guidelines
+                  and never submit automated spam Pull Requests.
+                </p>
+              </div>
+
+              <div className="relative p-7 bg-[#050e24]/95 border border-[#FF1E27]/60">
+                <div className="text-[#FF1E27] font-black text-3xl font-mono mb-3">03 // SUPPORT</div>
+                <h3 className="text-white text-xl font-bold tracking-wider uppercase mb-2">
+                  SPEAK UP & REPORT
+                </h3>
+                <p className="text-slate-300 text-base leading-relaxed">
+                  If you feel uncomfortable or witness any violation, immediately reach out to Chaitanya
+                  Kamble, any AIDN Pune organizer, or MLH Incident Support.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 p-5 bg-[#071536] border-l-4 border-[#0088FF] text-sm md:text-base">
+              <span className="text-white font-semibold tracking-wider uppercase">
+                FULL CODE OF CONDUCT: <span className="text-[#0088FF]">MLH.IO/CODE-OF-CONDUCT</span>
+              </span>
+              <span className="text-[#FFB800] font-mono">
+                INCIDENT HOTLINE: incidents@mlh.io | AIDN PUNE ORGANIZER DESK
+              </span>
+            </div>
+          </div>
+        )}
+
+        {stageId === 'MLH_RULES_2026' && (
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <div className="text-[#0088FF] text-sm font-bold tracking-[0.3em] uppercase mb-2">
+                  HOW TO COMPLETE THE CHALLENGE
+                </div>
+                <h1
+                  className="text-white text-4xl sm:text-5xl font-black tracking-wide uppercase"
+                  style={{ fontFamily: "'Orbitron', sans-serif" }}
+                >
+                  HACKTOBERFEST <span className="text-[#FFB800]">2026 RULES</span>
+                </h1>
+              </div>
+              <div className="px-4 py-2 bg-[#FF1E27]/20 border border-[#FF1E27] text-white text-sm font-bold tracking-widest uppercase">
+                OCT 1 – OCT 31, 2026
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              {[
+                {
+                  step: 'STEP 01',
+                  title: 'REGISTER ONLINE',
+                  desc: 'Sign up at hacktoberfest.com using your GitHub or GitLab account & check in at our MLH Pune portal.',
+                  color: '#0077FF',
+                },
+                {
+                  step: 'STEP 02',
+                  title: 'FIND "HACKTOBERFEST" REPOS',
+                  desc: 'Contribute to public repos labeled with the "hacktoberfest" topic on GitHub or GitLab.',
+                  color: '#FFB800',
+                },
+                {
+                  step: 'STEP 03',
+                  title: 'SUBMIT 4 QUALITY PRs',
+                  desc: 'Create 4 high-quality Pull/Merge Requests—code features, bug fixes, tests, or technical docs.',
+                  color: '#FF1E27',
+                },
+                {
+                  step: 'STEP 04',
+                  title: 'MAINTAINER ACCEPTANCE',
+                  desc: 'Maintainers merge your PR or add the "hacktoberfest-accepted" label to unlock your 2026 badge & swag!',
+                  color: '#0088FF',
+                },
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-6 bg-[#050e24]/95 border-t-4 flex flex-col justify-between"
+                  style={{ borderColor: item.color }}
+                >
+                  <div>
+                    <div
+                      className="text-xs font-mono font-bold tracking-[0.25em] mb-3"
+                      style={{ color: item.color }}
+                    >
+                      {item.step}
+                    </div>
+                    <h3 className="text-white font-extrabold text-xl tracking-wide uppercase mb-3">
+                      {item.title}
+                    </h3>
+                    <p className="text-slate-300 text-sm md:text-base leading-relaxed">{item.desc}</p>
+                  </div>
+                  <div className="mt-6 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span>VERIFIED RULE</span>
+                    <CheckCircle2 className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stageId === 'MLH_AGENDA' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[#FFB800] text-sm font-bold tracking-[0.3em] uppercase mb-1">
+                  31 OCTOBER 2026 • PUNE, INDIA
+                </div>
+                <h1
+                  className="text-white text-4xl sm:text-5xl font-black tracking-wide uppercase"
+                  style={{ fontFamily: "'Orbitron', sans-serif" }}
+                >
+                  OPENING & EVENT <span className="text-[#0088FF]">RUN OF SHOW</span>
+                </h1>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  time: '10:15 AM IST',
+                  title: 'OPENING CEREMONY & WELCOME KEYNOTE',
+                  speaker: 'Chaitanya Kamble — Founder, AIDN Pune',
+                  tag: 'MAIN STAGE',
+                  color: '#0077FF',
+                },
+                {
+                  time: '10:45 AM IST',
+                  title: 'MLH HACKTOBERFEST KICKOFF & GIT/GITHUB CRASH COURSE',
+                  speaker: 'Open Source Mentors & Community Leads',
+                  tag: 'WORKSHOP',
+                  color: '#FFB800',
+                },
+                {
+                  time: '11:30 AM IST',
+                  title: 'OPEN SOURCE CONTRIBUTION SPRINT BEGINS',
+                  speaker: 'AI, Cloud-Native, Web & Beginner Tracks',
+                  tag: 'HACKING',
+                  color: '#FF1E27',
+                },
+                {
+                  time: '01:30 PM IST',
+                  title: 'NETWORKING LUNCH & MAINTAINER OFFICE HOURS',
+                  speaker: 'Live PR Reviews & Architecture Discussions',
+                  tag: 'COMMUNITY',
+                  color: '#0088FF',
+                },
+                {
+                  time: '02:30 PM IST',
+                  title: 'LIGHTNING DEMOS & MERGED PR SHOWCASE',
+                  speaker: 'Top Contributors & Project Maintainers',
+                  tag: 'SHOWCASE',
+                  color: '#FFB800',
+                },
+                {
+                  time: '04:00 PM IST',
+                  title: 'SWAG DISTRIBUTION, GROUP PHOTO & CLOSING NOTE',
+                  speaker: 'AIDN Pune x Hacktoberfest 2026 Team',
+                  tag: 'CELEBRATION',
+                  color: '#FF1E27',
+                },
+              ].map((slot, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 md:p-5 bg-[#050e24]/90 border border-[#0066FF]/30 hover:border-[#0088FF] transition-colors"
+                >
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="px-3 py-1.5 bg-[#081738] border text-xs md:text-sm font-mono font-bold whitespace-nowrap"
+                      style={{ borderColor: slot.color, color: slot.color }}
+                    >
+                      {slot.time}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-base md:text-lg tracking-wide uppercase">
+                        {slot.title}
+                      </h3>
+                      <p className="text-slate-400 text-xs md:text-sm mt-0.5">{slot.speaker}</p>
+                    </div>
+                  </div>
+                  <span className="hidden sm:inline-block text-[11px] font-mono tracking-widest px-2.5 py-1 bg-slate-900 text-slate-300 border border-slate-700">
+                    {slot.tag}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stageId === 'MLH_REPOS' && (
+          <div className="space-y-7">
+            <div>
+              <div className="text-[#0088FF] text-sm font-bold tracking-[0.3em] uppercase mb-1">
+                CURATED FOR PUNE CONTRIBUTORS
+              </div>
+              <h1
+                className="text-white text-4xl sm:text-5xl font-black tracking-wide uppercase"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                FEATURED <span className="text-[#FF1E27]">CONTRIBUTION</span> TRACKS
+              </h1>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-6 bg-[#050e24]/95 border-t-4 border-[#0077FF] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 bg-[#0077FF]/20 text-[#0088FF] text-xs font-bold tracking-widest">
+                    TRACK 01 // AI & AGENTS
+                  </span>
+                  <Cpu className="w-6 h-6 text-[#0088FF]" />
+                </div>
+                <h3 className="text-white text-2xl font-bold uppercase">
+                  AIDN PUNE AI & GEN-AI TOOLING
+                </h3>
+                <p className="text-slate-300 text-sm md:text-base">
+                  Contribute to open-source LLM evaluation pipelines, MCP servers, RAG templates, and
+                  Python/TypeScript agent SDKs.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono text-[#0088FF]">
+                  <span className="px-2 py-1 bg-[#081738]">#python</span>
+                  <span className="px-2 py-1 bg-[#081738]">#genai</span>
+                  <span className="px-2 py-1 bg-[#081738]">#hacktoberfest</span>
+                </div>
+              </div>
+
+              <div className="p-6 bg-[#050e24]/95 border-t-4 border-[#FFB800] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 bg-[#FFB800]/20 text-[#FFB800] text-xs font-bold tracking-widest">
+                    TRACK 02 // CLOUD NATIVE & WEB
+                  </span>
+                  <Terminal className="w-6 h-6 text-[#FFB800]" />
+                </div>
+                <h3 className="text-white text-2xl font-bold uppercase">
+                  DEVOPS, KUBERNETES & FULL-STACK
+                </h3>
+                <p className="text-slate-300 text-sm md:text-base">
+                  Build CLI utilities, Docker/K8s manifests, React/Next.js community portals, and
+                  observability dashboards.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono text-[#FFB800]">
+                  <span className="px-2 py-1 bg-[#081738]">#golang</span>
+                  <span className="px-2 py-1 bg-[#081738]">#react</span>
+                  <span className="px-2 py-1 bg-[#081738]">#cloud-native</span>
+                </div>
+              </div>
+
+              <div className="p-6 bg-[#050e24]/95 border-t-4 border-[#FF1E27] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 bg-[#FF1E27]/20 text-[#FF1E27] text-xs font-bold tracking-widest">
+                    TRACK 03 // FIRST-TIME PRs
+                  </span>
+                  <Award className="w-6 h-6 text-[#FF1E27]" />
+                </div>
+                <h3 className="text-white text-2xl font-bold uppercase">
+                  GOOD FIRST ISSUES & DOCS SPRINT
+                </h3>
+                <p className="text-slate-300 text-sm md:text-base">
+                  Making your very first open-source Pull Request today? Start with guided beginner
+                  issues and mentor-assisted repositories!
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono text-[#FF1E27]">
+                  <span className="px-2 py-1 bg-[#081738]">#good-first-issue</span>
+                  <span className="px-2 py-1 bg-[#081738]">#documentation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stageId === 'MLH_WIFI_LAUNCH' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#0077FF]/20 border border-[#0077FF] text-[#0088FF] text-xs font-bold tracking-[0.25em] uppercase">
+                <Radio className="w-4 h-4 animate-pulse" />
+                <span>SYSTEMS ONLINE — READY TO HACK</span>
+              </div>
+              <h1
+                className="text-white text-5xl sm:text-6xl font-black tracking-wide uppercase leading-none"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                HAPPY HACKING,{' '}
+                <span className="text-[#FFB800] drop-shadow-[0_0_20px_rgba(255,184,0,0.4)]">
+                  PUNE!
+                </span>
+              </h1>
+              <p className="text-slate-200 text-xl leading-relaxed">
+                Connect to the venue network, complete your official MLH event check-in, and submit
+                your first Pull Request!
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-5 bg-[#050f26] border-2 border-[#0077FF]">
+                  <div className="flex items-center gap-2 text-xs text-[#0088FF] font-bold tracking-widest uppercase">
+                    <Wifi className="w-4 h-4" /> VENUE WIFI NETWORK
+                  </div>
+                  <div className="text-white font-mono text-2xl font-bold mt-2">
+                    {config.wifiSsid}
+                  </div>
+                  <div className="text-sm text-slate-300 font-mono mt-1">
+                    PASS: <span className="text-[#FFB800] font-bold">{config.wifiPass}</span>
+                  </div>
+                </div>
+
+                <div className="p-5 bg-[#050f26] border-2 border-[#FF1E27]">
+                  <div className="flex items-center gap-2 text-xs text-[#FF1E27] font-bold tracking-widest uppercase">
+                    <Sparkles className="w-4 h-4" /> MLH EVENT CHECK-IN
+                  </div>
+                  <div className="text-white font-mono text-xl font-bold mt-2 break-all">
+                    {config.mlhCheckinUrl}
+                  </div>
+                  <div className="text-sm text-slate-300 font-mono mt-1">
+                    COMMUNITY: <span className="text-[#0088FF] font-bold">{config.discordInvite}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Interactive QR / Status HUD Box */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center p-8 bg-[#050e24]/95 border-2 border-[#0077FF] relative">
+              <div className="w-8 h-8 border-t-4 border-l-4 border-[#FFB800] absolute -top-2 -left-2" />
+              <div className="w-8 h-8 border-b-4 border-r-4 border-[#FF1E27] absolute -bottom-2 -right-2" />
+
+              {/* Stylized Tech QR Matrix Visual */}
+              <div className="w-44 h-44 bg-white p-3 rounded-sm shadow-[0_0_25px_rgba(0,119,255,0.45)] flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="w-full h-full fill-[#030712]">
+                  <path d="M5,5 H35 V35 H5 Z M12,12 V28 H28 V12 Z M17,17 H23 V23 H17 Z" />
+                  <path d="M65,5 H95 V35 H65 Z M72,12 V28 H88 V12 Z M77,17 H83 V23 H77 Z" />
+                  <path d="M5,65 H35 V95 H5 Z M12,72 V88 H28 V72 Z M17,77 H23 V83 H17 Z" />
+                  <rect x="42" y="10" width="8" height="8" />
+                  <rect x="52" y="18" width="6" height="14" />
+                  <rect x="42" y="36" width="16" height="8" />
+                  <rect x="12" y="44" width="18" height="8" />
+                  <rect x="38" y="48" width="12" height="12" fill="#0066FF" />
+                  <rect x="56" y="44" width="10" height="16" />
+                  <rect x="74" y="42" width="16" height="8" />
+                  <rect x="66" y="56" width="12" height="12" />
+                  <rect x="44" y="68" width="14" height="8" />
+                  <rect x="64" y="74" width="24" height="8" />
+                  <rect x="44" y="84" width="12" height="10" />
+                  <rect x="78" y="84" width="14" height="10" fill="#FF1E27" />
+                </svg>
+              </div>
+
+              <div
+                className="mt-5 text-white font-bold text-lg tracking-[0.22em] uppercase text-center"
+                style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+              >
+                SCAN FOR REPOS & CHECK-IN
+              </div>
+              <div className="text-xs text-[#0088FF] tracking-[0.2em] uppercase mt-1">
+                AIDN PUNE × HACKTOBERFEST 2026
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Subtle Presenter Deck Progress Bar */}
+      <div className="flex items-center justify-between pt-3 border-t border-[#0066FF]/20 text-xs text-slate-400">
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[#0088FF]">PUNE, INDIA // 31 OCT 2026</span>
+          <span className="hidden sm:inline text-slate-600">|</span>
+          <span className="hidden sm:inline font-mono">ORGANIZER: CHAITANYA KAMBLE (AIDN PUNE)</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onPrev}
+            className="p-1.5 hover:bg-[#0066FF]/20 text-slate-300 hover:text-white border border-transparent hover:border-[#0066FF]/40 transition-colors"
+            title="Previous Slide (Left Arrow)"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex gap-1.5 px-2">
+            {Array.from({ length: totalSlides }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-1.5 transition-all duration-300 ${
+                  idx + 1 === currentSlideIndex ? 'w-8 bg-[#0088FF]' : 'w-2 bg-slate-700'
+                }`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={onNext}
+            className="p-1.5 hover:bg-[#0066FF]/20 text-slate-300 hover:text-white border border-transparent hover:border-[#0066FF]/40 transition-colors"
+            title="Next Slide (Right Arrow)"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// ORGANIZER CONTROL PANEL & PRESENTER REMOTE CONSOLE
+// ============================================================================
+const OrganizerControlPanel = ({
+  isOpen,
+  onClose,
+  config,
+  setConfig,
+  stageIndex,
+  jumpToStage,
+  remainingSeconds,
+  resetCustomTimer,
+  triggerQuick10SecPreview,
+  openPopupRemote,
+  isRemoteOnlyWindow,
+  onUploadPhotoClick,
+}) => {
+  const [draftConfig, setDraftConfig] = useState(config);
+  const [activeTab, setActiveTab] = useState('stages'); // 'stages' | 'countdown' | 'content'
+  const [saveBanner, setSaveBanner] = useState(false);
+
+  useEffect(() => {
+    setDraftConfig(config);
+  }, [config]);
+
+  if (!isOpen && !isRemoteOnlyWindow) return null;
+
+  const handleApplyChanges = () => {
+    setConfig(draftConfig);
+    if (draftConfig.timerMode === 'custom') {
+      const total =
+        Number(draftConfig.customHours || 0) * 3600 +
+        Number(draftConfig.customMinutes || 0) * 60 +
+        Number(draftConfig.customSeconds || 0);
+      resetCustomTimer(total, draftConfig.isRunning);
+    }
+    setSaveBanner(true);
+    setTimeout(() => setSaveBanner(false), 2000);
+  };
+
+  const formatSec = (s) => {
+    const cl = Math.max(0, Math.floor(s));
+    const h = Math.floor(cl / 3600);
+    const m = Math.floor((cl % 3600) / 60);
+    const sec = cl % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  };
+
+  return (
+    <div
+      className={`${
+        isRemoteOnlyWindow
+          ? 'fixed inset-0 bg-[#030712] z-50 overflow-y-auto p-6'
+          : 'fixed inset-y-0 right-0 w-full max-w-lg bg-[#040a1a]/95 backdrop-blur-md border-l-2 border-[#0077FF] z-50 overflow-y-auto p-6 shadow-[0_0_50px_rgba(0,0,0,0.9)]'
+      } text-white select-none`}
+      style={{ fontFamily: "'Chakra Petch', sans-serif" }}
+    >
+      {/* Top Bar */}
+      <div className="flex items-center justify-between pb-4 border-b border-[#0066FF]/40">
+        <div className="flex items-center gap-2.5">
+          <Sliders className="w-5 h-5 text-[#0088FF]" />
+          <div>
+            <h2 className="text-lg font-bold tracking-[0.15em] uppercase text-white">
+              ORGANIZER CONTROL PANEL
+            </h2>
+            <p className="text-xs text-slate-400">
+              Presenter Console • Hidden from Audience Screen (Press <kbd className="text-[#FFB800]">C</kbd> to toggle)
+            </p>
+          </div>
+        </div>
+        {!isRemoteOnlyWindow && (
+          <button
+            onClick={onClose}
+            className="px-3 py-1 bg-slate-800 hover:bg-[#FF1E27] text-xs font-bold tracking-wider uppercase rounded transition-colors"
+          >
+            HIDE [ESC]
+          </button>
+        )}
+      </div>
+
+      {/* Live Status Monitor */}
+      <div className="my-4 p-4 bg-[#071330] border border-[#0077FF]/50 rounded flex items-center justify-between">
+        <div>
+          <div className="text-[11px] text-[#0088FF] font-bold tracking-widest uppercase">
+            ACTIVE PROJECTOR STAGE
+          </div>
+          <div className="text-white font-bold text-sm md:text-base mt-0.5">
+            {STAGES[stageIndex]?.label}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[11px] text-[#FFB800] font-bold tracking-widest uppercase">
+            LIVE COUNTDOWN
+          </div>
+          <div className="text-xl font-mono font-black text-white">
+            {config.timerMode === 'static24' ? '24:00:00' : formatSec(remainingSeconds)}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Action Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+        <button
+          onClick={() => setConfig((prev) => ({ ...prev, isRunning: !prev.isRunning, timerMode: prev.timerMode === 'static24' ? 'custom' : prev.timerMode }))}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold uppercase tracking-wider border ${
+            config.isRunning
+              ? 'bg-[#FFB800]/20 border-[#FFB800] text-[#FFB800]'
+              : 'bg-[#0077FF]/20 border-[#0077FF] text-white'
+          }`}
+        >
+          {config.isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+          {config.isRunning ? 'Pause' : 'Start Timer'}
+        </button>
+
+        <button
+          onClick={triggerQuick10SecPreview}
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#FF1E27]/20 hover:bg-[#FF1E27]/35 border border-[#FF1E27] text-white text-xs font-bold uppercase tracking-wider"
+          title="Set countdown to 00:00:10 and start immediately to preview the opening transition"
+        >
+          <Zap className="w-3.5 h-3.5 text-[#FF1E27]" />
+          10s Preview
+        </button>
+
+        <button
+          onClick={() => jumpToStage(Math.min(STAGES.length - 1, stageIndex + 1))}
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#0077FF] hover:bg-[#0055CC] text-white text-xs font-bold uppercase tracking-wider"
+        >
+          <FastForward className="w-3.5 h-3.5" />
+          Next Stage
+        </button>
+
+        {!isRemoteOnlyWindow && (
+          <button
+            onClick={openPopupRemote}
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold uppercase tracking-wider"
+            title="Pop out a second synchronized controller window for your laptop screen"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Pop-Out
+          </button>
+        )}
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-slate-800 mb-5 text-xs font-bold tracking-wider uppercase">
+        <button
+          onClick={() => setActiveTab('stages')}
+          className={`flex-1 py-2.5 border-b-2 ${
+            activeTab === 'stages'
+              ? 'border-[#0088FF] text-[#0088FF]'
+              : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          1. Stage Switcher
+        </button>
+        <button
+          onClick={() => setActiveTab('countdown')}
+          className={`flex-1 py-2.5 border-b-2 ${
+            activeTab === 'countdown'
+              ? 'border-[#FFB800] text-[#FFB800]'
+              : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          2. Countdown Config
+        </button>
+        <button
+          onClick={() => setActiveTab('content')}
+          className={`flex-1 py-2.5 border-b-2 ${
+            activeTab === 'content'
+              ? 'border-[#FF1E27] text-[#FF1E27]'
+              : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          3. Speaker & Venue
+        </button>
+      </div>
+
+      {/* TAB 1: STAGE & SLIDE SWITCHER */}
+      {activeTab === 'stages' && (
+        <div className="space-y-2.5">
+          <div className="text-xs text-slate-400 mb-2">
+            Click any stage below to transition the audience projector immediately with a HUD glitch effect:
+          </div>
+          {STAGES.map((st, idx) => {
+            const active = idx === stageIndex;
+            return (
+              <button
+                key={st.id}
+                onClick={() => jumpToStage(idx)}
+                className={`w-full text-left p-3.5 border flex items-center justify-between transition-all ${
+                  active
+                    ? 'bg-[#0066FF]/25 border-[#0088FF] text-white shadow-[0_0_15px_rgba(0,119,255,0.3)]'
+                    : 'bg-[#061029] border-slate-800 text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`text-xs font-mono px-2 py-0.5 font-bold ${
+                      st.mode === 1
+                        ? 'bg-[#0077FF]/30 text-[#0088FF]'
+                        : st.mode === 2
+                        ? 'bg-[#FF1E27]/30 text-[#FF1E27]'
+                        : 'bg-[#FFB800]/30 text-[#FFB800]'
+                    }`}
+                  >
+                    MODE {st.mode}
+                  </span>
+                  <span className="font-bold text-sm">{st.label}</span>
+                </div>
+                {active && (
+                  <span className="text-[10px] font-mono bg-[#0088FF] text-black font-black px-2 py-0.5 uppercase">
+                    ON SCREEN
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* TAB 2: CONFIGURABLE COUNTDOWN SETTINGS */}
+      {activeTab === 'countdown' && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-[#0088FF] font-bold uppercase tracking-wider mb-2">
+              Countdown Operating Mode
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'custom', label: 'Custom Duration' },
+                { id: 'target', label: 'Target Date/Time' },
+                { id: 'static24', label: '24:00:00 Poster' },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setDraftConfig({ ...draftConfig, timerMode: m.id })}
+                  className={`py-2 px-3 text-xs font-bold uppercase border ${
+                    draftConfig.timerMode === m.id
+                      ? 'bg-[#0077FF]/30 border-[#0088FF] text-white'
+                      : 'bg-[#061029] border-slate-800 text-slate-400'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {draftConfig.timerMode === 'target' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[#061029] border border-slate-800">
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">Event Date</label>
+                <input
+                  type="date"
+                  value={draftConfig.targetDate}
+                  onChange={(e) => setDraftConfig({ ...draftConfig, targetDate: e.target.value })}
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-sm text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">Event Time</label>
+                <input
+                  type="time"
+                  value={draftConfig.targetTime}
+                  onChange={(e) => setDraftConfig({ ...draftConfig, targetTime: e.target.value })}
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-sm text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">Timezone</label>
+                <select
+                  value={draftConfig.timezoneLabel}
+                  onChange={(e) => setDraftConfig({ ...draftConfig, timezoneLabel: e.target.value })}
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-sm text-white"
+                >
+                  <option value="IST">IST (UTC+05:30)</option>
+                  <option value="UTC">UTC (GMT)</option>
+                  <option value="LOCAL">System Local Time</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {draftConfig.timerMode === 'custom' && (
+            <div className="p-3.5 bg-[#061029] border border-slate-800 space-y-3">
+              <div className="text-xs text-slate-300 font-semibold">
+                Set Hours / Minutes / Seconds for Countdown:
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] text-slate-400 uppercase mb-1">Hours</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={draftConfig.customHours}
+                    onChange={(e) =>
+                      setDraftConfig({ ...draftConfig, customHours: Number(e.target.value) })
+                    }
+                    className="w-full bg-[#030712] border border-slate-700 px-3 py-2 text-sm font-mono text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 uppercase mb-1">Minutes</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={draftConfig.customMinutes}
+                    onChange={(e) =>
+                      setDraftConfig({ ...draftConfig, customMinutes: Number(e.target.value) })
+                    }
+                    className="w-full bg-[#030712] border border-slate-700 px-3 py-2 text-sm font-mono text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 uppercase mb-1">Seconds</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={draftConfig.customSeconds}
+                    onChange={(e) =>
+                      setDraftConfig({ ...draftConfig, customSeconds: Number(e.target.value) })
+                    }
+                    className="w-full bg-[#030712] border border-slate-700 px-3 py-2 text-sm font-mono text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {[
+                  { label: '24:00:00', h: 24, m: 0, s: 0 },
+                  { label: '30 Mins', h: 0, m: 30, s: 0 },
+                  { label: '15 Mins', h: 0, m: 15, s: 0 },
+                  { label: '5 Mins', h: 0, m: 5, s: 0 },
+                  { label: '1 Min', h: 0, m: 1, s: 0 },
+                  { label: '10 Sec Demo', h: 0, m: 0, s: 10 },
+                ].map((p, i) => (
+                  <button
+                    key={i}
+                    onClick={() =>
+                      setDraftConfig({
+                        ...draftConfig,
+                        timerMode: 'custom',
+                        customHours: p.h,
+                        customMinutes: p.m,
+                        customSeconds: p.s,
+                      })
+                    }
+                    className="px-2.5 py-1 bg-[#0b1d47] hover:bg-[#0077FF] text-xs font-mono text-slate-200 border border-[#0077FF]/40"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Display Labels on Countdown Screen */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase mb-1">
+                Bottom Date Label
+              </label>
+              <input
+                type="text"
+                value={draftConfig.dateDisplay}
+                onChange={(e) => setDraftConfig({ ...draftConfig, dateDisplay: e.target.value })}
+                className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-xs text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase mb-1">
+                Bottom Time Label
+              </label>
+              <input
+                type="text"
+                value={draftConfig.timeDisplay}
+                onChange={(e) => setDraftConfig({ ...draftConfig, timeDisplay: e.target.value })}
+                className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-xs text-[#FFB800]"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase mb-1">
+                Location Label
+              </label>
+              <input
+                type="text"
+                value={draftConfig.locationDisplay}
+                onChange={(e) => setDraftConfig({ ...draftConfig, locationDisplay: e.target.value })}
+                className="w-full bg-[#030712] border border-slate-700 px-2.5 py-2 text-xs text-white"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2.5 text-xs text-slate-200 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={draftConfig.autoTransitionOnZero}
+              onChange={(e) =>
+                setDraftConfig({ ...draftConfig, autoTransitionOnZero: e.target.checked })
+              }
+              className="accent-[#0077FF] w-4 h-4"
+            />
+            Automatically transition to Chaitanya Kamble Introduction when countdown reaches 00:00:00
+          </label>
+
+          <button
+            onClick={handleApplyChanges}
+            className="w-full py-3 bg-[#0077FF] hover:bg-[#005ce6] text-white font-bold text-sm tracking-[0.2em] uppercase shadow-[0_0_20px_rgba(0,119,255,0.4)] transition-all"
+          >
+            {saveBanner ? '✓ CONFIGURATION SAVED & APPLIED' : 'SAVE & APPLY COUNTDOWN CONFIGURATION'}
+          </button>
+        </div>
+      )}
+
+      {/* TAB 3: SPEAKER PORTRAIT & VENUE DETAILS */}
+      {activeTab === 'content' && (
+        <div className="space-y-4">
+          <div className="p-3.5 bg-[#061029] border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#0088FF] uppercase tracking-wider">
+                Organizer Introduction (Mode 2A)
+              </span>
+              <button
+                onClick={onUploadPhotoClick}
+                className="px-3 py-1 bg-[#0077FF] hover:bg-[#0055CC] text-white text-xs font-bold uppercase flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload Portrait Photo
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">First Name</label>
+                <input
+                  type="text"
+                  value={draftConfig.organizerNameLine1}
+                  onChange={(e) =>
+                    setDraftConfig({ ...draftConfig, organizerNameLine1: e.target.value })
+                  }
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-1.5 text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">Last Name</label>
+                <input
+                  type="text"
+                  value={draftConfig.organizerNameLine2}
+                  onChange={(e) =>
+                    setDraftConfig({ ...draftConfig, organizerNameLine2: e.target.value })
+                  }
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-1.5 text-xs text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase mb-1">Role Title</label>
+              <input
+                type="text"
+                value={draftConfig.organizerRole}
+                onChange={(e) => setDraftConfig({ ...draftConfig, organizerRole: e.target.value })}
+                className="w-full bg-[#030712] border border-slate-700 px-2.5 py-1.5 text-xs text-[#0088FF]"
+              />
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-[#061029] border border-slate-800 space-y-3">
+            <div className="text-xs font-bold text-[#FFB800] uppercase tracking-wider">
+              Venue WiFi & MLH Check-In (Mode 3)
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">WiFi SSID</label>
+                <input
+                  type="text"
+                  value={draftConfig.wifiSsid}
+                  onChange={(e) => setDraftConfig({ ...draftConfig, wifiSsid: e.target.value })}
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-1.5 text-xs text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 uppercase mb-1">
+                  WiFi Password
+                </label>
+                <input
+                  type="text"
+                  value={draftConfig.wifiPass}
+                  onChange={(e) => setDraftConfig({ ...draftConfig, wifiPass: e.target.value })}
+                  className="w-full bg-[#030712] border border-slate-700 px-2.5 py-1.5 text-xs text-[#FFB800]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleApplyChanges}
+            className="w-full py-3 bg-[#0077FF] hover:bg-[#005ce6] text-white font-bold text-sm tracking-[0.2em] uppercase"
+          >
+            {saveBanner ? '✓ CHANGES APPLIED' : 'SAVE & APPLY CONTENT'}
+          </button>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Reference Footer */}
+      <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+        <div className="text-white font-bold uppercase tracking-wider mb-1">
+          PRESENTER HOTKEYS:
+        </div>
+        <div className="grid grid-cols-2 gap-1 font-mono">
+          <div>
+            <span className="text-[#0088FF]">[SPACE / →]</span> Next Stage
+          </div>
+          <div>
+            <span className="text-[#0088FF]">[←]</span> Previous Stage
+          </div>
+          <div>
+            <span className="text-[#0088FF]">[1 / 2 / 3]</span> Jump to Mode 1/2/3
+          </div>
+          <div>
+            <span className="text-[#0088FF]">[P]</span> Play / Pause Timer
+          </div>
+          <div>
+            <span className="text-[#0088FF]">[F]</span> Fullscreen Projector
+          </div>
+          <div>
+            <span className="text-[#0088FF]">[C]</span> Hide/Show Control Panel
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MAIN APPLICATION COMPONENT
+// ============================================================================
+function App() {
+  // Load saved config from localStorage if available
+  const [config, setConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aidn_hacktoberfest26_config');
+      return saved ? { ...DEFAULT_CONFIG, ...JSON.parse(saved) } : DEFAULT_CONFIG;
+    } catch {
+      return DEFAULT_CONFIG;
+    }
+  });
+
+  const [stageIndex, setStageIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(24 * 3600);
+  const [controlPanelOpen, setControlPanelOpen] = useState(false);
+  const [isGlitching, setIsGlitching] = useState(false);
+  const [isRemoteOnlyWindow, setIsRemoteOnlyWindow] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const broadcastRef = useRef(null);
+
+  // Check if opened as dedicated Presenter Remote Pop-Out window
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('presenter') === 'true') {
+        setIsRemoteOnlyWindow(true);
+        setControlPanelOpen(true);
+      }
+    }
+  }, []);
+
+  // Save config & broadcast to synced tabs/windows
+  useEffect(() => {
+    try {
+      localStorage.setItem('aidn_hacktoberfest26_config', JSON.stringify(config));
+    } catch {}
+    if (broadcastRef.current) {
+      broadcastRef.current.postMessage({ type: 'SYNC_CONFIG', config });
+    }
+  }, [config]);
+
+  // Setup BroadcastChannel for Dual-Screen Presenter Mode
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const ch = new BroadcastChannel('aidn_pune_hacktoberfest_2026_channel');
+      broadcastRef.current = ch;
+      ch.onmessage = (event) => {
+        const data = event.data;
+        if (!data) return;
+        if (data.type === 'SYNC_CONFIG') {
+          setConfig(data.config);
+        } else if (data.type === 'JUMP_STAGE') {
+          triggerStageTransition(data.stageIndex, false);
+        } else if (data.type === 'RESET_CUSTOM_TIMER') {
+          setRemainingSeconds(data.seconds);
+        }
+      };
+      return () => ch.close();
+    }
+  }, []);
+
+  // Trigger High-Tech Glitch Transition Between Stages
+  const triggerStageTransition = useCallback(
+    (nextIdx, broadcast = true) => {
+      const clamped = Math.max(0, Math.min(STAGES.length - 1, nextIdx));
+      setIsGlitching(true);
+      if (config.soundEnabled) {
+        sfx.playTransitionGlitch();
+      }
+      setTimeout(() => {
+        setStageIndex(clamped);
+      }, 140);
+      setTimeout(() => {
+        setIsGlitching(false);
+      }, 360);
+
+      if (broadcast && broadcastRef.current) {
+        broadcastRef.current.postMessage({ type: 'JUMP_STAGE', stageIndex: clamped });
+      }
+    },
+    [config.soundEnabled]
+  );
+
+  // Compute or tick Countdown Timer
+  useEffect(() => {
+    if (config.timerMode === 'target') {
+      const computeTargetDiff = () => {
+        const offsetStr =
+          config.timezoneLabel === 'IST'
+            ? '+05:30'
+            : config.timezoneLabel === 'UTC'
+            ? 'Z'
+            : '';
+        const isoString = `${config.targetDate}T${config.targetTime}:00${offsetStr}`;
+        const targetMs = new Date(isoString).getTime();
+        const nowMs = Date.now();
+        if (isNaN(targetMs)) return 24 * 3600;
+        return Math.max(0, Math.floor((targetMs - nowMs) / 1000));
+      };
+
+      setRemainingSeconds(computeTargetDiff());
+      const interval = setInterval(() => {
+        const diff = computeTargetDiff();
+        setRemainingSeconds(diff);
+        if (diff === 0 && config.autoTransitionOnZero && stageIndex === 0 && config.isRunning) {
+          setConfig((prev) => ({ ...prev, isRunning: false }));
+          triggerStageTransition(1);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (config.timerMode === 'custom') {
+      if (!config.isRunning) return;
+      const interval = setInterval(() => {
+        setRemainingSeconds((prev) => {
+          if (prev <= 1) {
+            if (config.autoTransitionOnZero && stageIndex === 0) {
+              setTimeout(() => triggerStageTransition(1), 200);
+            }
+            setConfig((c) => ({ ...c, isRunning: false }));
+            return 0;
+          }
+          const nextVal = prev - 1;
+          if (config.soundEnabled && nextVal <= 10) {
+            sfx.playTick(true);
+          }
+          return nextVal;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [
+    config.timerMode,
+    config.targetDate,
+    config.targetTime,
+    config.timezoneLabel,
+    config.isRunning,
+    config.autoTransitionOnZero,
+    config.soundEnabled,
+    stageIndex,
+    triggerStageTransition,
+  ]);
+
+  const resetCustomTimer = (totalSeconds, runImmediately = false) => {
+    setRemainingSeconds(totalSeconds);
+    setConfig((prev) => ({
+      ...prev,
+      timerMode: 'custom',
+      isRunning: runImmediately,
+    }));
+    if (broadcastRef.current) {
+      broadcastRef.current.postMessage({ type: 'RESET_CUSTOM_TIMER', seconds: totalSeconds });
+    }
+  };
+
+  // 10-Second Opening Ceremony Preview Sequence
+  const triggerQuick10SecPreview = () => {
+    triggerStageTransition(0);
+    setRemainingSeconds(10);
+    setConfig((prev) => ({
+      ...prev,
+      timerMode: 'custom',
+      customHours: 0,
+      customMinutes: 0,
+      customSeconds: 10,
+      isRunning: true,
+      autoTransitionOnZero: true,
+    }));
+  };
+
+  // Keyboard Navigation for Presenter
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore shortcuts when typing in an input field
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)) {
+        if (e.key === 'Escape') setControlPanelOpen(false);
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        triggerStageTransition(stageIndex + 1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        triggerStageTransition(stageIndex - 1);
+      } else if (e.key === '1') {
+        triggerStageTransition(0);
+      } else if (e.key === '2') {
+        triggerStageTransition(1);
+      } else if (e.key === '3') {
+        triggerStageTransition(3);
+      } else if (e.key === 'c' || e.key === 'C' || e.key === 'o' || e.key === 'O') {
+        setControlPanelOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setControlPanelOpen(false);
+      } else if (e.key === 'p' || e.key === 'P') {
+        setConfig((prev) => ({
+          ...prev,
+          timerMode: prev.timerMode === 'static24' ? 'custom' : prev.timerMode,
+          isRunning: !prev.isRunning,
+        }));
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stageIndex, triggerStageTransition]);
+
+  // Handle Custom Organizer Portrait Upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setConfig((prev) => ({ ...prev, organizerPhotoUrl: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Open Second Synchronized Window for Presenter Laptop
+  const openPopupRemote = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('presenter', 'true');
+    window.open(url.toString(), 'AIDN_Presenter_Remote', 'width=560,height=820');
+  };
+
+  const currentStage = STAGES[stageIndex] || STAGES[0];
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-[#030712] select-none">
+      {/* Load Required Futuristic Display Fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,700&family=Orbitron:wght@600;700;800;900&display=swap');
+
+        @keyframes floatPulse {
+          0% { transform: translateY(0px) scale(1); opacity: 0.85; }
+          100% { transform: translateY(-8px) scale(1.06); opacity: 1; }
+        }
+
+        @keyframes glitchSlice {
+          0% { transform: translate(0); filter: hue-rotate(0deg); }
+          25% { transform: translate(-8px, 3px) skewX(3deg); filter: drop-shadow(6px 0 #FF1E27) drop-shadow(-6px 0 #0088FF); }
+          50% { transform: translate(8px, -3px) skewX(-3deg); }
+          75% { transform: translate(-4px, 1px); }
+          100% { transform: translate(0); }
+        }
+
+        .cyber-glitch-active {
+          animation: glitchSlice 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+      `}</style>
+
+      {/* Hidden File Input for Custom Speaker Photo Swap */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+
+      {/* Consistent Deep-Navy Grid + Floating Geometric Pixels Background */}
+      <TechnicalBackground
+        scanlines={config.scanlinesEnabled}
+        particles={config.particlesEnabled}
+        showOuterHudCorners={currentStage.id === 'INTRO_ORGANIZER'}
+      />
+
+      {/* Audience-Facing Stage Viewport */}
+      <main
+        className={`relative z-10 w-full h-full transition-opacity duration-150 ${
+          isGlitching ? 'cyber-glitch-active opacity-90' : 'opacity-100'
+        }`}
+      >
+        {currentStage.id === 'COUNTDOWN' && (
+          <Mode1CountdownView
+            config={config}
+            remainingSeconds={remainingSeconds}
+            onTriggerNext={() => triggerStageTransition(1)}
+          />
+        )}
+
+        {currentStage.id === 'INTRO_ORGANIZER' && (
+          <Mode2AOrganizerIntroView
+            config={config}
+            onNextStage={() => triggerStageTransition(2)}
+            onUploadPhoto={() => fileInputRef.current?.click()}
+          />
+        )}
+
+        {currentStage.id === 'EVENT_REVEAL' && (
+          <Mode2BEventRevealView
+            config={config}
+            onNextStage={() => triggerStageTransition(3)}
+          />
+        )}
+
+        {currentStage.mode === 3 && (
+          <Mode3MlhDeckView
+            stageId={currentStage.id}
+            config={config}
+            onNext={() => triggerStageTransition(stageIndex + 1)}
+            onPrev={() => triggerStageTransition(stageIndex - 1)}
+            currentSlideIndex={stageIndex - 2}
+            totalSlides={STAGES.length - 3}
+          />
+        )}
+      </main>
+
+      {/* Invisible-Until-Hovered Bottom-Right Presenter Hotspot (Zero clutter on projector!) */}
+      <div className="fixed bottom-3 right-3 z-40 flex items-center gap-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
+        <button
+          onClick={() => triggerStageTransition(stageIndex - 1)}
+          className="p-2 bg-[#050e24]/90 border border-[#0077FF]/60 text-white rounded hover:bg-[#0077FF]"
+          title="Previous Stage (Left Arrow)"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => triggerStageTransition(stageIndex + 1)}
+          className="p-2 bg-[#050e24]/90 border border-[#0077FF]/60 text-white rounded hover:bg-[#0077FF]"
+          title="Next Stage (Right Arrow / Space)"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen?.().catch(() => {});
+            } else {
+              document.exitFullscreen?.().catch(() => {});
+            }
+          }}
+          className="p-2 bg-[#050e24]/90 border border-[#0077FF]/60 text-white rounded hover:bg-[#0077FF]"
+          title="Fullscreen Projector (F)"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setControlPanelOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#050e24]/90 border border-[#0077FF] text-xs font-bold tracking-wider uppercase text-white rounded hover:bg-[#0077FF]"
+          title="Open Organizer Control Panel (Hotkey: C)"
+        >
+          <Settings className="w-4 h-4" />
+          <span>Controls [C]</span>
+        </button>
+      </div>
+
+      {/* Organizer Control Panel Drawer / Remote */}
+      <OrganizerControlPanel
+        isOpen={controlPanelOpen}
+        onClose={() => setControlPanelOpen(false)}
+        config={config}
+        setConfig={setConfig}
+        stageIndex={stageIndex}
+        jumpToStage={(idx) => triggerStageTransition(idx)}
+        remainingSeconds={remainingSeconds}
+        resetCustomTimer={resetCustomTimer}
+        triggerQuick10SecPreview={triggerQuick10SecPreview}
+        openPopupRemote={openPopupRemote}
+        isRemoteOnlyWindow={isRemoteOnlyWindow}
+        onUploadPhotoClick={() => fileInputRef.current?.click()}
+      />
+    </div>
+  );
+}
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
